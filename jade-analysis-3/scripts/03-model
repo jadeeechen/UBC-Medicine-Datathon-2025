@@ -1,0 +1,68 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+import numpy as np
+import os
+from PIL import Image
+
+# Function to load and preprocess an image
+def load_and_preprocess_image(image_path, target_size=(224, 224)):
+    img = Image.open(image_path)  # Open the image file
+    img = img.resize(target_size)  # Resize the image to target size
+    img = np.array(img)  # Convert the image to a numpy array
+    img = img / 255.0  # Normalize pixel values to [0, 1]
+    return img
+
+# Load the dataset
+df = pd.read_csv('02_filtered_single_labels.csv')
+
+# Split dataset (80% train, 20% test)
+df_train, df_test = train_test_split(df, test_size=0.2, random_state=42, stratify=df['Finding Labels Encoded'])
+
+# Get image paths and labels
+image_paths_train = df_train['Image Index'].values
+labels_train = df_train['Finding Labels Encoded'].values
+image_paths_test = df_test['Image Index'].values
+labels_test = df_test['Finding Labels Encoded'].values
+
+# Preprocess the training images
+X_train = [load_and_preprocess_image(os.path.join('images', img)) for img in image_paths_train]
+
+# OPTION 1 ###########
+# # Convert to numpy array of shape (num_images, height, width, channels)
+# X_train = np.array(X_train)
+
+# # Train a k-NN classifier (works directly with 3D image data)
+# knn = KNeighborsClassifier(n_neighbors=3)
+# knn.fit(X_train.reshape(X_train.shape[0], -1), labels_train)  # Flatten each image for k-NN
+
+# # Preprocess the test images
+# X_test = [load_and_preprocess_image(os.path.join('images', img)) for img in image_paths_test]
+
+# # Convert to numpy array
+# X_test = np.array(X_test)
+
+# # Predict on the test set
+# labels_pred = knn.predict(X_test.reshape(X_test.shape[0], -1))  # Flatten each image for k-NN
+
+# # Evaluate the model
+# print(classification_report(labels_test, labels_pred))
+
+
+# OPTION 2 ###########
+# X_train = np.array([img.flatten() for img in X_train])  # Flatten images into 1D
+
+# # Train a classifier (Random Forest in this case)
+# clf = RandomForestClassifier(n_estimators=100, random_state=42)
+# clf.fit(X_train, labels_train)
+
+# # Preprocess the test images
+# X_test = [load_and_preprocess_image(os.path.join('images', img)) for img in image_paths_test]
+# X_test = np.array([img.flatten() for img in X_test])  # Flatten images into 1D
+
+# # Predict on the test set
+# labels_pred = clf.predict(X_test)
+
+# # Evaluate the model
+# print(classification_report(labels_test, labels_pred))
